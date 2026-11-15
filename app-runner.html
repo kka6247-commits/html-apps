@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪄 마법 앱 실행기 & 저장기</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #e8f8f5;
+            overflow: hidden;
+        }
+        /* 왼쪽 제어판 (입력 및 저장 영역) */
+        .left-panel {
+            width: 370px;
+            background-color: #ffffff;
+            border-right: 4px solid #1abc9c;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            border-bottom: 2px dashed #1abc9c;
+        }
+        .header-title {
+            color: #16a085;
+            font-size: 22px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .btn-clear-mini {
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+            border: 1px solid #bdc3c7;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-clear-mini:active {
+            transform: scale(0.95);
+        }
+        .step-box {
+            background-color: #fef9e7;
+            border: 2px solid #f1c40f;
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            line-height: 1.4;
+        }
+        textarea {
+            flex: 1;
+            min-height: 80px;
+            width: 100%;
+            resize: none;
+            border: 3px dashed #bdc3c7;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 13px;
+            margin-bottom: 12px;
+            outline: none;
+            background-color: #fdfefe;
+        }
+        textarea:focus {
+            border-color: #3498db;
+            background-color: #ebf5fb;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn-run {
+            background-color: #e74c3c;
+            box-shadow: 0 5px 0 #c0392b;
+            margin-bottom: 14px;
+        }
+        .btn-run:hover {
+            background-color: #ff5e4d;
+        }
+        
+        /* 저장 영역 박스 */
+        .save-box {
+            background-color: #ebf5fb;
+            border: 2px solid #5dade2;
+            border-radius: 12px;
+            padding: 10px 12px;
+        }
+        .save-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #21618c;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .name-input {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 15px;
+            border: 2px solid #aed6f1;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            outline: none;
+        }
+        .name-input:focus {
+            border-color: #2e86c1;
+        }
+        .btn-save {
+            background-color: #3498db;
+            box-shadow: 0 5px 0 #2874a6;
+            padding: 12px;
+            font-size: 17px;
+        }
+        .btn-save:hover {
+            background-color: #4aa3df;
+        }
+        
+        /* 오른쪽 실행 화면 (미리보기 영역) */
+        .right-panel {
+            flex: 1;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            background-color: #f4fae6;
+        }
+        .preview-header {
+            font-size: 19px;
+            font-weight: bold;
+            color: #27ae60;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-fullscreen {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #1e8449;
+        }
+        .btn-fullscreen:active {
+            transform: scale(0.95);
+        }
+        .iframe-container {
+            flex: 1;
+            background-color: white;
+            border: 6px solid #2ecc71;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="left-panel">
+        <div class="header-row">
+            <h1 class="header-title">🪄 마법 앱 실행기</h1>
+            <button class="btn-clear-mini" id="clear-btn">지우기 🗑️</button>
+        </div>
+        
+        <div class="step-box">
+            1️⃣ 제미나이에서 복사한 코드를<br>아래 빈칸을 꾹~ 눌러서 붙여넣어!
+        </div>
+        
+        <textarea id="code-input" placeholder="👇 여기를 손가락으로 꾹 누르고 '붙여넣기'를 선택하세요!"></textarea>
+        
+        <button class="btn btn-run" id="run-btn">2️⃣ 내 앱 실행하기! 🚀</button>
+        
+        <div class="save-box">
+            <label class="save-label" for="app-name">3️⃣ 내 태블릿에 저장하기</label>
+            <input type="text" id="app-name" class="name-input" placeholder="앱 이름 입력 (예: 강아지키우기)">
+            <button class="btn btn-save" id="save-btn">내 태블릿에 저장 💾</button>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="preview-header">
+            <span>📱 내 마법 앱 화면</span>
+            <button class="btn-fullscreen" id="fullscreen-btn">🖥️ 화면 꽉 차게 보기 (새 창)</button>
+        </div>
+        <div class="iframe-container">
+            <iframe id="preview-frame"></iframe>
+        </div>
+    </div>
+
+    <script>
+        const codeInput = document.getElementById('code-input');
+        const runBtn = document.getElementById('run-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const appNameInput = document.getElementById('app-name');
+        const frame = document.getElementById('preview-frame');
+
+        // 코드 실행 함수
+        function runCode() {
+            const code = codeInput.value.trim();
+            if (!code) {
+                alert("먼저 왼쪽 빈칸에 제미나이 코드를 붙여넣어 주세요! 😊");
+                return;
+            }
+            const doc = frame.contentWindow.document;
+            doc.open();
+            doc.write(code);
+            doc.close();
+        }
+
+        // 태블릿에 HTML 파일로 즉시 다운로드하는 함수
+        function saveApp() {
+            const code = codeInput.value.trim();
+            if (!code) {
+                alert("저장할 코드가 없어요! 먼저 코드를 붙여넣고 실행해 보세요. 😊");
+                return;
+            }
+
+            let rawName = appNameInput.value.trim();
+            if (!rawName) {
+                rawName = "나의_마법앱";
+            }
+            // 파일명에 쓸 수 없는 특수문자 제거
+            const safeName = rawName.replace(/[\/:*?"<>|]/g, "_");
+            const fileName = safeName + ".html";
+
+            const blob = new Blob([code], { type: "text/html;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            alert("🎉 '" + fileName + "' 파일이 태블릿 [다운로드] 폴더에 저장되었어요!");
+        }
+
+        // 새 창(전체 화면)으로 열기 함수
+        function openFullScreen() {
+            const code = codeInput.value.trim();
+            if (!code) {
+                alert("먼저 왼쪽 빈칸에 코드를 붙여넣어 주세요! 😊");
+                return;
+            }
+            const blob = new Blob([code], { type: "text/html;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            window.open(url, "_blank");
+        }
+
+        runBtn.addEventListener('click', runCode);
+        saveBtn.addEventListener('click', saveApp);
+        fullscreenBtn.addEventListener('click', openFullScreen);
+
+        // 지우기 버튼
+        clearBtn.addEventListener('click', () => {
+            if (confirm("입력한 코드를 모두 지울까요?")) {
+                codeInput.value = '';
+                appNameInput.value = '';
+                const doc = frame.contentWindow.document;
+                doc.open();
+                doc.write('<html><body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; color:#ccc;"><h1>실행할 코드가 없습니다 텅~ 👻</h1></body></html>');
+                doc.close();
+            }
+        });
+
+        // 초기 화면 세팅
+        window.onload = () => {
+            const doc = frame.contentWindow.document;
+            doc.open();
+            doc.write('<html><body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; color:#aaa; text-align:center;"><h2>왼쪽에 코드를 붙여넣고<br>🚀 실행 버튼을 눌러주세요!</h2></body></html>');
+            doc.close();
+        };
+    </script>
+</body>
+</html>
