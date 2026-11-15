@@ -311,7 +311,7 @@
         let qrMade = false;
 
         function showQr() {
-            const url = location.hostname.endsWith('github.io') ? location.href.split('#')[0] : APP_URL;
+            const url = location.hostname.endsWith('github.io') ? location.origin + location.pathname : APP_URL;
             if (!qrMade) {
                 if (typeof QRCode === 'undefined') {
                     alert('QR 코드를 만들지 못했어요. 인터넷 연결을 확인해 주세요.\n주소: ' + url);
