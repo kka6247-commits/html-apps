@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나비 키우기 마법 앱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Jua', sans-serif;
+            overflow: hidden;
+            user-select: none;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F7FA 70%, #81C784 70%, #4CAF50 100%);
+        }
+
+        /* 구름 둥실둥실 애니메이션 */
+        @keyframes floatCloud {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(110vw); }
+        }
+        .cloud {
+            animation: floatCloud 35s linear infinite;
+        }
+
+        /* 애벌레 꿈틀꿈틀 애니메이션 */
+        @keyframes wiggleCaterpillar {
+            0%, 100% { transform: translateX(0px) scaleY(1); }
+            25% { transform: translateX(-8px) scaleY(1.06) scaleX(0.95); }
+            50% { transform: translateX(-16px) scaleY(0.95) scaleX(1.05); }
+            75% { transform: translateX(-8px) scaleY(1.05) scaleX(0.96); }
+        }
+        .caterpillar-move {
+            animation: wiggleCaterpillar 3s ease-in-out infinite;
+        }
+
+        /* 번데기 대롱대롱 흔들림 애니메이션 */
+        @keyframes swayPupa {
+            0%, 100% { transform: rotate(-4deg); }
+            50% { transform: rotate(4deg); }
+        }
+        .pupa-sway {
+            transform-origin: top center;
+            animation: swayPupa 2.5s ease-in-out infinite;
+        }
+
+        /* 알 까딱까딱 흔들림 애니메이션 */
+        @keyframes wobbleEgg {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-10deg) scale(1.05); }
+            50% { transform: rotate(10deg) scale(1.05); }
+            75% { transform: rotate(-5deg) scale(1.02); }
+        }
+        .egg-wobble {
+            transform-origin: bottom center;
+            animation: wobbleEgg 0.6s ease-in-out;
+        }
+
+        /* 나비 날개짓 애니메이션 */
+        @keyframes flapWingLeft {
+            0%, 100% { transform: scaleX(1) rotate(0deg); }
+            50% { transform: scaleX(0.35) rotate(-10deg); }
+        }
+        @keyframes flapWingRight {
+            0%, 100% { transform: scaleX(1) rotate(0deg); }
+            50% { transform: scaleX(0.35) rotate(10deg); }
+        }
+        .wing-left {
+            transform-box: view-box;
+            transform-origin: 98px 85px;
+            animation: flapWingLeft 0.35s ease-in-out infinite;
+        }
+        .wing-right {
+            transform-box: view-box;
+            transform-origin: 102px 85px;
+            animation: flapWingRight 0.35s ease-in-out infinite;
+        }
+
+        /* 나비 자유롭게 날아다니기 */
+        @keyframes flyAround {
+            0% { transform: translate(0px, 0px) rotate(0deg); }
+            25% { transform: translate(120px, -60px) rotate(15deg); }
+            50% { transform: translate(-80px, -90px) rotate(-10deg); }
+            75% { transform: translate(-130px, 20px) rotate(-15deg); }
+            100% { transform: translate(0px, 0px) rotate(0deg); }
+        }
+        .butterfly-fly {
+            animation: flyAround 8s ease-in-out infinite;
+        }
+
+        /* 햇살 빔 반짝임 */
+        @keyframes sunBeam {
+            0% { opacity: 0; transform: scale(0.8); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+            100% { opacity: 0; transform: scale(1.2); }
+        }
+        .sun-effect {
+            animation: sunBeam 1.2s ease-out forwards;
+        }
+
+        /* 음표 둥실 떠오름 */
+        @keyframes floatNote {
+            0% { opacity: 1; transform: translateY(0) scale(0.8); }
+            100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
+        }
+        .note-effect {
+            animation: floatNote 1.2s ease-out forwards;
+        }
+
+        /* 냠냠 씹는 효과 */
+        @keyframes chomp {
+            0%, 100% { transform: scale(1); }
+            30% { transform: scale(1.25); }
+            60% { transform: scale(0.9); }
+        }
+        .chomp-anim {
+            animation: chomp 0.4s ease-in-out 2;
+        }
+
+        /* 버튼 입체감 */
+        .game-btn {
+            transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+        }
+        .game-btn:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+        }
+        .game-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col justify-between p-4 relative">
+
+    <!-- 배경 구름과 태양 -->
+    <div class="absolute top-6 left-10 text-6xl cloud pointer-events-none opacity-80">☁️</div>
+    <div class="absolute top-16 left-1/2 text-5xl cloud pointer-events-none opacity-70" style="animation-delay: -15s;">☁️</div>
+    <div id="bg-sun" class="absolute top-5 right-8 text-7xl transition-transform duration-500 pointer-events-none">☀️</div>
+
+    <!-- 상단 상태바 및 미션 보드 -->
+    <header class="z-10 flex flex-wrap items-center justify-between bg-white/90 backdrop-blur-sm rounded-3xl px-6 py-3 shadow-lg border-4 border-green-400">
+        <div class="flex items-center gap-3">
+            <span id="stage-badge" class="bg-yellow-500 text-white text-xl md:text-2xl px-4 py-1.5 rounded-full shadow">
+                🥚 1단계: 알
+            </span>
+            <p id="status-message" class="text-lg md:text-2xl text-gray-700 font-bold">
+                풀잎 위의 작은 알을 따뜻하게 돌봐주세요!
+            </p>
+        </div>
+
+        <!-- 단계별 목표 미션 표시 -->
+        <div id="mission-board" class="flex items-center gap-3 mt-2 md:mt-0">
+            <!-- JS에서 동적으로 채워짐 -->
+        </div>
+    </header>
+
+    <!-- 중앙 메인 스테이지 (나뭇가지, 나뭇잎, 캐릭터, 이펙트) -->
+    <main class="relative flex-1 flex items-center justify-center w-full my-2">
+        
+        <!-- 햇살 빛줄기 효과 (숨겨져 있다가 햇살쬐기 누르면 나타남) -->
+        <div id="sun-rays" class="hidden absolute inset-0 pointer-events-none flex items-center justify-center z-20">
+            <div class="w-96 h-96 rounded-full bg-yellow-300/50 blur-2xl sun-effect"></div>
+        </div>
+
+        <!-- 이펙트 컨테이너 (음표, 물방울, 먹이 등 날아가는 효과) -->
+        <div id="effect-layer" class="absolute inset-0 pointer-events-none z-30 flex items-center justify-center"></div>
+
+        <!-- 나뭇가지와 커다란 풀잎 배경 (SVG로 정교하게 그림) -->
+        <div id="leaf-stage" class="relative w-full max-w-2xl h-72 flex items-center justify-center transition-all duration-700">
+            <!-- 나뭇가지와 잎사귀 SVG -->
+            <svg viewBox="0 0 600 260" class="w-full h-full drop-shadow-xl overflow-visible">
+                <!-- 갈색 나뭇가지 -->
+                <path d="M 20 80 Q 250 110 580 60" stroke="#795548" stroke-width="18" stroke-linecap="round" fill="none"/>
+                <path d="M 180 95 Q 240 130 280 140" stroke="#795548" stroke-width="10" stroke-linecap="round" fill="none"/>
+                
+                <!-- 애벌레가 올라타는 커다란 초록 풀잎 -->
+                <g id="big-leaf" class="transition-opacity duration-500">
+                    <path d="M 120 150 Q 300 60 500 155 Q 300 245 120 150 Z" fill="#66BB6A" stroke="#388E3C" stroke-width="5"/>
+                    <!-- 잎맥 -->
+                    <path d="M 125 150 Q 300 152 490 155" stroke="#81C784" stroke-width="4" fill="none"/>
+                    <path d="M 210 150 L 250 115 M 280 151 L 320 112 M 350 152 L 390 118" stroke="#81C784" stroke-width="3" fill="none"/>
+                    <path d="M 210 150 L 250 185 M 280 151 L 320 190 M 350 152 L 390 185" stroke="#81C784" stroke-width="3" fill="none"/>
+                </g>
+            </svg>
+
+            <!-- 실제 먹이 (상추/어린잎 & 반짝이는 이슬방울) -->
+            <div id="food-item" class="hidden absolute z-20 text-5xl transition-all duration-500">🥬</div>
+            <div id="dew-item" class="hidden absolute z-20 text-5xl transition-all duration-500">💧</div>
+
+            <!-- 1단계: 풀잎 위의 귀여운 나비 알 (SVG) -->
+            <div id="egg-container" class="absolute z-10 flex items-center justify-center transition-transform duration-300" style="top: 42%; left: 46%;">
+                <svg id="egg-svg" width="75" height="85" viewBox="0 0 75 85" class="overflow-visible drop-shadow-lg">
+                    <defs>
+                        <radialGradient id="eggGrad" cx="35%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#FFFDE7"/>
+                            <stop offset="60%" stop-color="#FFF59D"/>
+                            <stop offset="100%" stop-color="#FBC02D"/>
+                        </radialGradient>
+                    </defs>
+                    <!-- 알 본체 -->
+                    <path d="M 37.5 10 C 56 10, 65 38, 65 56 C 65 73, 52 80, 37.5 80 C 23 80, 10 73, 10 56 C 10 38, 19 10, 37.5 10 Z" 
+                          fill="url(#eggGrad)" stroke="#F57F17" stroke-width="3"/>
+                    <!-- 실제 나비 알의 세로 줄무늬 돌기 -->
+                    <path d="M 37.5 10 L 37.5 80" stroke="#F9A825" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.7"/>
+                    <path d="M 26 15 Q 20 48 25 77" stroke="#F9A825" stroke-width="1.5" stroke-dasharray="3 2" fill="none" opacity="0.7"/>
+                    <path d="M 49 15 Q 55 48 50 77" stroke="#F9A825" stroke-width="1.5" stroke-dasharray="3 2" fill="none" opacity="0.7"/>
+                    <!-- 반짝이 빛 반사 -->
+                    <ellipse cx="26" cy="30" rx="4" ry="8" transform="rotate(-20 26 30)" fill="white" opacity="0.8"/>
+                    <!-- 부화 직전 나타나는 알 껍질 금 -->
+                    <path id="egg-crack" class="hidden" d="M 32 22 L 42 32 L 30 42 L 44 52 L 35 62" stroke="#E65100" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+
+            <!-- 2단계: 실제 모습과 닮은 디테일한 애벌레 (SVG로 마디, 숨구멍, 다리, 더듬이 구현) -->
+            <div id="caterpillar-container" class="hidden absolute z-10 flex items-center justify-center caterpillar-move transition-transform duration-500" style="top: 32%;">
+                <svg id="caterpillar-svg" width="240" height="110" viewBox="0 0 240 110" class="overflow-visible">
+                    <!-- 애벌레 몸통 마디들 (먹을수록 통통하고 길어짐) -->
+                    <g id="caterpillar-segments">
+                        <!-- 꼬리 마디 -->
+                        <circle cx="55" cy="65" r="16" fill="#7CB342" stroke="#33691E" stroke-width="2.5"/>
+                        <circle cx="55" cy="68" r="2.5" fill="#FFEB3B"/>
+                        
+                        <!-- 몸통 마디 4 -->
+                        <circle cx="80" cy="62" r="18" fill="#8BC34A" stroke="#33691E" stroke-width="2.5"/>
+                        <path d="M 74 50 Q 80 56 86 50" stroke="#33691E" stroke-width="2" fill="none"/>
+                        <circle cx="80" cy="67" r="3" fill="#FFEB3B"/>
+                        <!-- 배다리 -->
+                        <rect x="75" y="77" width="6" height="9" rx="3" fill="#558B2F"/>
+
+                        <!-- 몸통 마디 3 -->
+                        <circle cx="108" cy="60" r="19" fill="#9CCC65" stroke="#33691E" stroke-width="2.5"/>
+                        <path d="M 102 47 Q 108 54 114 47" stroke="#33691E" stroke-width="2" fill="none"/>
+                        <circle cx="108" cy="66" r="3" fill="#FFEB3B"/>
+                        <rect x="104" y="76" width="6" height="9" rx="3" fill="#558B2F"/>
+
+                        <!-- 몸통 마디 2 -->
+                        <circle cx="136" cy="61" r="19" fill="#8BC34A" stroke="#33691E" stroke-width="2.5"/>
+                        <path d="M 130 48 Q 136 55 142 48" stroke="#33691E" stroke-width="2" fill="none"/>
+                        <circle cx="136" cy="66" r="3" fill="#FFEB3B"/>
+                        <rect x="132" y="77" width="6" height="9" rx="3" fill="#558B2F"/>
+
+                        <!-- 앞가슴 마디 -->
+                        <circle cx="162" cy="63" r="18" fill="#9CCC65" stroke="#33691E" stroke-width="2.5"/>
+                        <path d="M 160 79 L 165 88 M 168 78 L 173 87" stroke="#33691E" stroke-width="3" stroke-linecap="round"/>
+                    </g>
+
+                    <!-- 애벌레 머리 (더듬이, 귀여운 홑눈, 입) -->
+                    <g id="caterpillar-head">
+                        <!-- 더듬이 -->
+                        <path d="M 185 45 Q 195 30 202 33" stroke="#33691E" stroke-width="3" fill="none" stroke-linecap="round"/>
+                        <path d="M 192 48 Q 204 35 210 40" stroke="#33691E" stroke-width="3" fill="none" stroke-linecap="round"/>
+                        <!-- 머리통 -->
+                        <circle cx="186" cy="60" r="17" fill="#689F38" stroke="#33691E" stroke-width="2.5"/>
+                        <!-- 눈 -->
+                        <circle cx="192" cy="55" r="4" fill="#1B5E20"/>
+                        <circle cx="193" cy="54" r="1.5" fill="white"/>
+                        <!-- 볼터치 -->
+                        <ellipse cx="190" cy="64" rx="4" ry="2.5" fill="#FF8A80" opacity="0.8"/>
+                        <!-- 입 -->
+                        <path id="caterpillar-mouth" d="M 195 66 Q 199 69 202 65" stroke="#1B5E20" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    </g>
+                </svg>
+            </div>
+
+            <!-- 2단계: 실제 곤충 번데기(용) 모양을 본뜬 정교한 번데기 SVG -->
+            <div id="pupa-container" class="hidden absolute z-20 pupa-sway" style="top: 34%; left: 46%;">
+                <svg width="110" height="170" viewBox="0 0 110 170" class="overflow-visible drop-shadow-lg">
+                    <!-- 나뭇가지에 매달리는 하얀 명주실 고리 -->
+                    <path d="M 55 0 L 55 18" stroke="#FFF9C4" stroke-width="3" stroke-dasharray="3 2"/>
+                    <ellipse cx="55" cy="18" rx="6" ry="3" fill="#FFF9C4"/>
+                    
+                    <!-- 실제 나비 번데기 실루엣 (뿔 모양 돌기와 배 마디, 날개 윤곽) -->
+                    <defs>
+                        <linearGradient id="pupaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#AED581"/>
+                            <stop offset="50%" stop-color="#7CB342"/>
+                            <stop offset="100%" stop-color="#558B2F"/>
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- 번데기 몸체 -->
+                    <path d="M 55 18 
+                             C 65 22, 78 35, 82 52 
+                             C 86 68, 80 90, 72 115 
+                             C 66 135, 60 150, 55 158 
+                             C 50 150, 44 135, 38 115 
+                             C 30 90, 24 68, 28 52 
+                             C 32 35, 45 22, 55 18 Z" 
+                          fill="url(#pupaGrad)" stroke="#33691E" stroke-width="3"/>
+                    
+                    <!-- 등쪽 돌기 (실제 호랑나비/배추흰나비 번데기 특징) -->
+                    <path d="M 28 52 L 20 48 L 29 62" fill="#8BC34A" stroke="#33691E" stroke-width="2"/>
+                    <path d="M 82 52 L 90 48 L 81 62" fill="#8BC34A" stroke="#33691E" stroke-width="2"/>
+
+                    <!-- 접혀 있는 날개 윤곽선 -->
+                    <path d="M 35 48 Q 55 75 45 105 Q 32 85 35 48 Z" fill="#9CCC65" opacity="0.6" stroke="#33691E" stroke-width="1.5"/>
+                    <path d="M 75 48 Q 55 75 65 105 Q 78 85 75 48 Z" fill="#9CCC65" opacity="0.6" stroke="#33691E" stroke-width="1.5"/>
+
+                    <!-- 배 마디 주름선 -->
+                    <path d="M 39 112 Q 55 118 71 112" stroke="#33691E" stroke-width="2" fill="none"/>
+                    <path d="M 43 125 Q 55 130 67 125" stroke="#33691E" stroke-width="2" fill="none"/>
+                    <path d="M 47 138 Q 55 142 63 138" stroke="#33691E" stroke-width="2" fill="none"/>
+
+                    <!-- 번데기 반짝이 하이라이트 & 황금빛 점 -->
+                    <circle cx="42" cy="65" r="2.5" fill="#FFF59D"/>
+                    <circle cx="68" cy="65" r="2.5" fill="#FFF59D"/>
+                    <path d="M 45 32 Q 38 42 40 50" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.6" fill="none"/>
+                </svg>
+            </div>
+
+            <!-- 3단계: 화려하게 날아다니는 호랑나비/제비나비 SVG -->
+            <div id="butterfly-container" class="hidden absolute z-30 butterfly-fly cursor-pointer" onclick="playMagicSound('butterfly')">
+                <svg width="200" height="170" viewBox="0 0 200 170" class="overflow-visible drop-shadow-2xl">
+                    <!-- 왼쪽 날개 -->
+                    <g class="wing-left">
+                        <!-- 윗날개 -->
+                        <path d="M 99 75 C 50 15, 5 25, 15 70 C 20 92, 60 95, 99 86 Z" fill="#FFCA28" stroke="#E65100" stroke-width="3"/>
+                        <path d="M 90 75 C 55 32, 22 38, 28 66 C 32 80, 60 82, 90 79 Z" fill="#FF6F00" opacity="0.8"/>
+                        <circle cx="35" cy="55" r="7" fill="#FFF9C4"/>
+                        <circle cx="52" cy="45" r="5" fill="#FFF9C4"/>
+                        <!-- 아랫날개 -->
+                        <path d="M 99 84 C 55 90, 20 115, 38 145 C 52 162, 82 135, 99 105 Z" fill="#FFB300" stroke="#E65100" stroke-width="3"/>
+                        <circle cx="52" cy="125" r="6" fill="#29B6F6"/>
+                    </g>
+
+                    <!-- 오른쪽 날개 -->
+                    <g class="wing-right">
+                        <!-- 윗날개 -->
+                        <path d="M 101 75 C 150 15, 195 25, 185 70 C 180 92, 140 95, 101 86 Z" fill="#FFCA28" stroke="#E65100" stroke-width="3"/>
+                        <path d="M 110 75 C 145 32, 178 38, 172 66 C 168 80, 140 82, 110 79 Z" fill="#FF6F00" opacity="0.8"/>
+                        <circle cx="165" cy="55" r="7" fill="#FFF9C4"/>
+                        <circle cx="148" cy="45" r="5" fill="#FFF9C4"/>
+                        <!-- 아랫날개 -->
+                        <path d="M 101 84 C 145 90, 180 115, 162 145 C 148 162, 118 135, 101 105 Z" fill="#FFB300" stroke="#E65100" stroke-width="3"/>
+                        <circle cx="148" cy="125" r="6" fill="#29B6F6"/>
+                    </g>
+
+                    <!-- 나비 몸통 & 더듬이 -->
+                    <path d="M 97 55 Q 85 32 78 35" stroke="#3E2723" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    <path d="M 103 55 Q 115 32 122 35" stroke="#3E2723" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    <ellipse cx="100" cy="85" rx="6" ry="30" fill="#4E342E"/>
+                    <circle cx="100" cy="55" r="7" fill="#3E2723"/>
+                </svg>
+            </div>
+        </div>
+    </main>
+
+    <!-- 하단 조작 버튼 영역 (단계에 따라 버튼이 알맞게 바뀜) -->
+    <footer class="z-20 bg-white/95 backdrop-blur-md rounded-3xl p-4 shadow-xl border-4 border-amber-300">
+        <!-- 1단계 알 버튼들 -->
+        <div id="egg-controls" class="flex flex-wrap items-center justify-center gap-5">
+            <button onclick="doAction('eggSun')" id="btn-egg-sun" class="game-btn bg-amber-400 hover:bg-amber-300 text-amber-950 text-xl md:text-2xl px-7 py-3.5 rounded-2xl flex items-center gap-2">
+                <span>☀️</span> <span>따뜻하게 햇살 쬐기</span>
+            </button>
+            <button onclick="doAction('petEgg')" id="btn-pet-egg" class="game-btn bg-orange-400 hover:bg-orange-300 text-white text-xl md:text-2xl px-7 py-3.5 rounded-2xl flex items-center gap-2">
+                <span>🥚</span> <span>톡톡 쓰다듬기</span>
+            </button>
+        </div>
+
+        <!-- 2단계 애벌레 버튼들 -->
+        <div id="caterpillar-controls" class="hidden flex flex-wrap items-center justify-center gap-4">
+            <button onclick="doAction('eat')" id="btn-eat" class="game-btn bg-green-500 hover:bg-green-400 text-white text-xl md:text-2xl px-6 py-3.5 rounded-2xl flex items-center gap-2">
+                <span>🥬</span> <span>잎사귀 밥먹기</span>
+            </button>
+            <button onclick="doAction('dew')" id="btn-dew" class="game-btn bg-sky-500 hover:bg-sky-400 text-white text-xl md:text-2xl px-6 py-3.5 rounded-2xl flex items-center gap-2">
+                <span>💧</span> <span>이슬 먹기</span>
+            </button>
+            <button onclick="doAction('sun')" id="btn-sun" class="game-btn bg-amber-400 hover:bg-amber-300 text-amber-950 text-xl md:text-2xl px-6 py-3.5 rounded-2xl flex items-center gap-2">
+                <span>☀️</span> <span>햇살 쬐기</span>
+            </button>
+        </div>
+
+        <!-- 2단계 번데기 버튼들 (밥과 이슬은 없고 햇살과 노래만 가능!) -->
+        <div id="pupa-controls" class="hidden flex flex-wrap items-center justify-center gap-5">
+            <button onclick="doAction('pupaSun')" id="btn-pupa-sun" class="game-btn bg-amber-400 hover:bg-amber-300 text-amber-950 text-xl md:text-2xl px-7 py-3.5 rounded-2xl flex items-center gap-2">
+                <span>☀️</span> <span>따뜻한 햇살 쬐기</span>
+            </button>
+            <button onclick="doAction('sing')" id="btn-sing" class="game-btn bg-pink-500 hover:bg-pink-400 text-white text-xl md:text-2xl px-7 py-3.5 rounded-2xl flex items-center gap-2">
+                <span>🎵</span> <span>응원 노래 불러주기</span>
+            </button>
+        </div>
+
+        <!-- 3단계 나비 버튼들 -->
+        <div id="butterfly-controls" class="hidden flex flex-wrap items-center justify-center gap-5">
+            <button onclick="doAction('flower')" class="game-btn bg-rose-500 hover:bg-rose-400 text-white text-xl md:text-2xl px-6 py-3.5 rounded-2xl flex items-center gap-2">
+                <span>🌸</span> <span>꽃가루 흩날리기</span>
+            </button>
+            <button onclick="resetGame()" class="game-btn bg-purple-500 hover:bg-purple-400 text-white text-xl md:text-2xl px-6 py-3.5 rounded-2xl flex items-center gap-2">
+                <span>🔄</span> <span>처음부터 다시 키우기</span>
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        // 게임 상태 관리 객체 (단계가 바뀔 때마다 다음 단계 카운터를 완벽하게 0으로 초기화!)
+        let gameState = {
+            stage: 'egg', // 'egg' -> 'caterpillar' -> 'pupa' -> 'butterfly'
+            isBusy: false, // 애니메이션 진행 중 중복 클릭 방지
+            // 1단계 알 목표치 & 현재 횟수
+            egg: {
+                sun: 0, maxSun: 2,
+                pet: 0, maxPet: 2
+            },
+            // 2단계 애벌레 목표치 & 현재 횟수
+            caterpillar: {
+                eat: 0, maxEat: 3,
+                dew: 0, maxDew: 3,
+                sun: 0, maxSun: 2
+            },
+            // 3단계 번데기 목표치 & 현재 횟수 (이전 단계 햇살과 완전히 분리됨!)
+            pupa: {
+                sun: 0, maxSun: 3,
+                sing: 0, maxSing: 3
+            }
+        };
+
+        // 브라우저 내장 효과음 생성기 (Web Audio API)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playMagicSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'pet') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(480, now);
+                osc.frequency.exponentialRampToValueAtTime(680, now + 0.12);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'eat') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(520, now + 0.15);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'dew') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(950, now + 0.2);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'sun') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(554, now + 0.1);
+                osc.frequency.setValueAtTime(659, now + 0.2);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+                osc.start(now);
+                osc.stop(now + 0.45);
+            } else if (type === 'sing') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.type = 'triangle';
+                    o.frequency.setValueAtTime(freq, now + idx * 0.12);
+                    g.gain.setValueAtTime(0.2, now + idx * 0.12);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.25);
+                    o.start(now + idx * 0.12);
+                    o.stop(now + idx * 0.12 + 0.25);
+                });
+            } else if (type === 'evolve') {
+                const fanfare = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                fanfare.forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.type = 'sine';
+                    o.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    g.gain.setValueAtTime(0.25, now + idx * 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.4);
+                    o.start(now + idx * 0.1);
+                    o.stop(now + idx * 0.1 + 0.4);
+                });
+            }
+        }
+
+        // 화면 상단 미션 보드 업데이트
+        function updateUI() {
+            const board = document.getElementById('mission-board');
+            const stageBadge = document.getElementById('stage-badge');
+            const statusMsg = document.getElementById('status-message');
+
+            if (gameState.stage === 'egg') {
+                stageBadge.innerHTML = '🥚 1단계: 알';
+                stageBadge.className = 'bg-yellow-500 text-white text-xl md:text-2xl px-4 py-1.5 rounded-full shadow';
+
+                const e = gameState.egg;
+                board.innerHTML = `
+                    <div class="px-3 py-1 rounded-2xl text-lg font-bold ${e.sun >= e.maxSun ? 'bg-amber-200 text-amber-800 line-through' : 'bg-amber-100 text-amber-900'}">
+                        ☀️ 햇살: ${e.sun}/${e.maxSun}
+                    </div>
+                    <div class="px-3 py-1 rounded-2xl text-lg font-bold ${e.pet >= e.maxPet ? 'bg-orange-200 text-orange-800 line-through' : 'bg-orange-100 text-orange-900'}">
+                        🥚 쓰다듬기: ${e.pet}/${e.maxPet}
+                    </div>
+                `;
+
+                // 알을 돌봐줄수록 금이 가면서 부화할 준비를 함
+                if (e.sun + e.pet >= 2) {
+                    document.getElementById('egg-crack').classList.remove('hidden');
+                }
+
+            } else if (gameState.stage === 'caterpillar') {
+                stageBadge.innerHTML = '🐛 2단계: 애벌레';
+                stageBadge.className = 'bg-green-500 text-white text-xl md:text-2xl px-4 py-1.5 rounded-full shadow';
+                
+                const c = gameState.caterpillar;
+                board.innerHTML = `
+                    <div class="px-3 py-1 rounded-2xl text-lg font-bold ${c.eat >= c.maxEat ? 'bg-green-200 text-green-800 line-through' : 'bg-green-100 text-green-900'}">
+                        🥬 밥: ${c.eat}/${c.maxEat}
+                    </div>
+                    <div class="px-3 py-1 rounded-2xl text-lg font-bold ${c.dew >= c.maxDew ? 'bg-sky-200 text-sky-800 line-through' : 'bg-sky-100 text-sky-900'}">
+                        💧 이슬: ${c.dew}/${c.maxDew}
+                    </div>
+                    <div class="px-3 py-1 rounded-2xl text-lg font-bold ${c.sun >= c.maxSun ? 'bg-amber-200 text-amber-800 line-through' : 'bg-amber-100 text-amber-900'}">
+                        ☀️ 햇살: ${c.sun}/${c.maxSun}
+                    </div>
+                `;
+
+                // 애벌레 크기 성장 (밥과 이슬을 먹을수록 길어지고 통통해짐)
+                const totalGrowth = c.eat + c.dew;
+                const scaleX = 1 + (totalGrowth * 0.08);
+                const scaleY = 1 + (totalGrowth * 0.07);
+                document.getElementById('caterpillar-svg').style.transform = `scale(${scaleX}, ${scaleY})`;
+
+            } else if (gameState.stage === 'pupa') {
+                stageBadge.innerHTML = '🌿 3단계: 번데기';
+                stageBadge.className = 'bg-lime-600 text-white text-xl md:text-2xl px-4 py-1.5 rounded-full shadow';
+                
+                const p = gameState.pupa;
+                board.innerHTML = `
+                    <div class="px-3 py-1 rounded-2xl text-lg font-bold ${p.sun >= p.maxSun ? 'bg-amber-200 text-amber-800 line-through' : 'bg-amber-100 text-amber-900'}">
+                        ☀️ 햇살: ${p.sun}/${p.maxSun}
+                    </div>
+                    <div class="px-3 py-1 rounded-2xl text-lg font-bold ${p.sing >= p.maxSing ? 'bg-pink-200 text-pink-800 line-through' : 'bg-pink-100 text-pink-900'}">
+                        🎵 노래: ${p.sing}/${p.maxSing}
+                    </div>
+                `;
+
+            } else if (gameState.stage === 'butterfly') {
+                stageBadge.innerHTML = '🦋 4단계: 아름다운 나비';
+                stageBadge.className = 'bg-amber-500 text-white text-xl md:text-2xl px-4 py-1.5 rounded-full shadow';
+                board.innerHTML = `
+                    <div class="px-4 py-1 rounded-2xl text-lg font-bold bg-yellow-100 text-amber-900">
+                        ✨ 성장 완료! 하늘을 날아다녀요!
+                    </div>
+                `;
+            }
+        }
+
+        // 버튼 클릭 시 실제 먹이/이슬/햇살/노래 애니메이션 실행
+        function doAction(action) {
+            if (gameState.isBusy) return;
+            gameState.isBusy = true;
+
+            const statusMsg = document.getElementById('status-message');
+            const eggContainer = document.getElementById('egg-container');
+            const caterpillar = document.getElementById('caterpillar-container');
+            const pupa = document.getElementById('pupa-container');
+            const foodItem = document.getElementById('food-item');
+            const dewItem = document.getElementById('dew-item');
+            const sunRays = document.getElementById('sun-rays');
+            const effectLayer = document.getElementById('effect-layer');
+
+            // 1단계 알 행동
+            if (gameState.stage === 'egg') {
+                const e = gameState.egg;
+
+                if (action === 'eggSun') {
+                    playMagicSound('sun');
+                    sunRays.classList.remove('hidden');
+                    document.getElementById('bg-sun').style.transform = 'scale(1.3) rotate(20deg)';
+                    statusMsg.innerText = '따스한 햇살이 알을 포근하게 감싸주어요! ☀️';
+
+                    setTimeout(() => {
+                        sunRays.classList.add('hidden');
+                        document.getElementById('bg-sun').style.transform = 'scale(1)';
+                        if (e.sun < e.maxSun) e.sun++;
+                        statusMsg.innerText = '알 속이 따뜻해져서 꼬물꼬물 움직여요!';
+                        finishAction();
+                    }, 950);
+
+                } else if (action === 'petEgg') {
+                    playMagicSound('pet');
+                    eggContainer.classList.remove('egg-wobble');
+                    void eggContainer.offsetWidth; // 애니메이션 재실행 트릭
+                    eggContainer.classList.add('egg-wobble');
+                    statusMsg.innerText = '똑똑! 알을 다정하게 쓰다듬어 주었어요! 🥚';
+
+                    // 하트 반짝이 효과
+                    const span = document.createElement('span');
+                    span.innerText = '💛';
+                    span.className = 'absolute text-4xl note-effect';
+                    span.style.left = '48%';
+                    span.style.top = '40%';
+                    effectLayer.appendChild(span);
+                    setTimeout(() => span.remove(), 1100);
+
+                    setTimeout(() => {
+                        if (e.pet < e.maxPet) e.pet++;
+                        statusMsg.innerText = '알이 까딱까딱 대답을 해요!';
+                        finishAction();
+                    }, 750);
+                }
+            }
+            // 2단계 애벌레 행동
+            else if (gameState.stage === 'caterpillar') {
+                const c = gameState.caterpillar;
+
+                if (action === 'eat') {
+                    playMagicSound('eat');
+                    // 실제 상추/잎사귀가 애벌레 입 앞에 나타남
+                    foodItem.style.left = '58%';
+                    foodItem.style.top = '38%';
+                    foodItem.classList.remove('hidden');
+                    caterpillar.classList.add('chomp-anim');
+                    statusMsg.innerText = '아삭아삭! 싱싱한 풀잎을 맛있게 먹어요! 🥬';
+
+                    setTimeout(() => {
+                        foodItem.classList.add('hidden');
+                        caterpillar.classList.remove('chomp-anim');
+                        if (c.eat < c.maxEat) c.eat++;
+                        statusMsg.innerText = '배가 불러서 몸이 조금 더 통통하고 길어졌어요!';
+                        finishAction();
+                    }, 900);
+
+                } else if (action === 'dew') {
+                    playMagicSound('dew');
+                    // 반짝이는 이슬방울이 애벌레 입 앞으로 톡!
+                    dewItem.style.left = '58%';
+                    dewItem.style.top = '38%';
+                    dewItem.classList.remove('hidden');
+                    caterpillar.classList.add('chomp-anim');
+                    statusMsg.innerText = '꿀꺽꿀꺽! 시원한 아침 이슬을 마셔요! 💧';
+
+                    setTimeout(() => {
+                        dewItem.classList.add('hidden');
+                        caterpillar.classList.remove('chomp-anim');
+                        if (c.dew < c.maxDew) c.dew++;
+                        statusMsg.innerText = '수분을 보충해서 피부가 반짝반짝해졌어요!';
+                        finishAction();
+                    }, 900);
+
+                } else if (action === 'sun') {
+                    playMagicSound('sun');
+                    sunRays.classList.remove('hidden');
+                    document.getElementById('bg-sun').style.transform = 'scale(1.3) rotate(20deg)';
+                    statusMsg.innerText = '따스한 햇살을 쬐며 기지개를 쭉 펴요! ☀️';
+
+                    setTimeout(() => {
+                        sunRays.classList.add('hidden');
+                        document.getElementById('bg-sun').style.transform = 'scale(1)';
+                        if (c.sun < c.maxSun) c.sun++;
+                        statusMsg.innerText = '햇빛 에너지를 듬뿍 받았어요!';
+                        finishAction();
+                    }, 1000);
+                }
+            }
+            // 2단계 번데기 행동 (밥은 안 먹고 햇살과 노래만 가능!)
+            else if (gameState.stage === 'pupa') {
+                const p = gameState.pupa;
+
+                if (action === 'pupaSun') {
+                    playMagicSound('sun');
+                    sunRays.classList.remove('hidden');
+                    document.getElementById('bg-sun').style.transform = 'scale(1.3) rotate(20deg)';
+                    statusMsg.innerText = '번데기가 따뜻한 햇살을 받으며 날개를 준비해요! ☀️';
+
+                    setTimeout(() => {
+                        sunRays.classList.add('hidden');
+                        document.getElementById('bg-sun').style.transform = 'scale(1)';
+                        if (p.sun < p.maxSun) p.sun++;
+                        statusMsg.innerText = '번데기 속이 따뜻해졌어요!';
+                        finishAction();
+                    }, 1000);
+
+                } else if (action === 'sing') {
+                    playMagicSound('sing');
+                    statusMsg.innerText = '랄랄라~ 다정한 응원 노래를 불러줘요! 🎵';
+                    // 음표 이모티콘 둥실둥실 생성
+                    const notes = ['🎵', '🎶', '💖', '✨'];
+                    notes.forEach((n, i) => {
+                        const span = document.createElement('span');
+                        span.innerText = n;
+                        span.className = 'absolute text-4xl note-effect';
+                        span.style.left = `${42 + (i * 5)}%`;
+                        span.style.top = '45%';
+                        span.style.animationDelay = `${i * 0.15}s`;
+                        effectLayer.appendChild(span);
+                        setTimeout(() => span.remove(), 1300);
+                    });
+
+                    setTimeout(() => {
+                        if (p.sing < p.maxSing) p.sing++;
+                        statusMsg.innerText = '노래 소리에 번데기가 기분 좋게 흔들려요!';
+                        finishAction();
+                    }, 1100);
+                }
+            }
+            // 3단계 나비 행동
+            else if (gameState.stage === 'butterfly') {
+                if (action === 'flower') {
+                    playMagicSound('sing');
+                    statusMsg.innerText = '팔랑팔랑! 나비가 꽃가루 사이를 춤추듯 날아다녀요! 🌸';
+                    const flowers = ['🌸', '🌼', '✨', '🦋', '🌺'];
+                    for (let i = 0; i < 8; i++) {
+                        const span = document.createElement('span');
+                        span.innerText = flowers[i % flowers.length];
+                        span.className = 'absolute text-4xl note-effect';
+                        span.style.left = `${20 + Math.random() * 60}%`;
+                        span.style.top = `${30 + Math.random() * 40}%`;
+                        effectLayer.appendChild(span);
+                        setTimeout(() => span.remove(), 1300);
+                    }
+                    setTimeout(() => { gameState.isBusy = false; }, 800);
+                }
+            }
+        }
+
+        // 행동 완료 후 다음 단계 진화 조건 검사
+        function finishAction() {
+            updateUI();
+
+            if (gameState.stage === 'egg') {
+                const e = gameState.egg;
+                if (e.sun >= e.maxSun && e.pet >= e.maxPet) {
+                    setTimeout(() => evolveToCaterpillar(), 600);
+                } else {
+                    gameState.isBusy = false;
+                }
+            } else if (gameState.stage === 'caterpillar') {
+                const c = gameState.caterpillar;
+                if (c.eat >= c.maxEat && c.dew >= c.maxDew && c.sun >= c.maxSun) {
+                    setTimeout(() => evolveToPupa(), 600);
+                } else {
+                    gameState.isBusy = false;
+                }
+            } else if (gameState.stage === 'pupa') {
+                const p = gameState.pupa;
+                if (p.sun >= p.maxSun && p.sing >= p.maxSing) {
+                    setTimeout(() => evolveToButterfly(), 600);
+                } else {
+                    gameState.isBusy = false;
+                }
+            } else {
+                gameState.isBusy = false;
+            }
+        }
+
+        // 1단계 -> 2단계 (알 부화 -> 애벌레 변신 & 카운터 초기화!)
+        function evolveToCaterpillar() {
+            playMagicSound('evolve');
+            gameState.stage = 'caterpillar';
+
+            // 애벌레 단계 카운터 0으로 확실하게 초기화!
+            gameState.caterpillar.eat = 0;
+            gameState.caterpillar.dew = 0;
+            gameState.caterpillar.sun = 0;
+
+            document.getElementById('egg-container').classList.add('hidden');
+            document.getElementById('caterpillar-container').classList.remove('hidden');
+
+            document.getElementById('egg-controls').classList.add('hidden');
+            document.getElementById('caterpillar-controls').classList.remove('hidden');
+
+            document.getElementById('status-message').innerText = '톡! 알을 깨고 귀여운 애벌레가 태어났어요! 맛있는 잎과 이슬을 주세요! 🐛';
+            updateUI();
+            gameState.isBusy = false;
+        }
+
+        // 2단계 -> 3단계 (번데기 변신 & 카운터 완벽 초기화!)
+        function evolveToPupa() {
+            playMagicSound('evolve');
+            gameState.stage = 'pupa';
+            
+            // 오류 방지: 번데기 단계 카운터를 무조건 0으로 확실하게 초기화!
+            gameState.pupa.sun = 0;
+            gameState.pupa.sing = 0;
+
+            // 화면 요소 전환
+            document.getElementById('caterpillar-container').classList.add('hidden');
+            document.getElementById('big-leaf').classList.add('opacity-20'); // 번데기가 잘 보이게 잎을 살짝 흐리게
+            document.getElementById('pupa-container').classList.remove('hidden');
+
+            document.getElementById('caterpillar-controls').classList.add('hidden');
+            document.getElementById('pupa-controls').classList.remove('hidden');
+
+            document.getElementById('status-message').innerText = '우와! 통통해진 애벌레가 멋진 번데기가 되었어요! 번데기는 밥을 먹지 않아요.';
+            updateUI();
+            gameState.isBusy = false;
+        }
+
+        // 3단계 -> 4단계 (나비 우화!)
+        function evolveToButterfly() {
+            playMagicSound('evolve');
+            gameState.stage = 'butterfly';
+
+            document.getElementById('pupa-container').classList.add('hidden');
+            document.getElementById('big-leaf').classList.remove('opacity-20');
+            document.getElementById('butterfly-container').classList.remove('hidden');
+
+            document.getElementById('pupa-controls').classList.add('hidden');
+            document.getElementById('butterfly-controls').classList.remove('hidden');
+
+            document.getElementById('status-message').innerText = '짜잔! 번데기에서 아름다운 나비가 태어나 하늘을 날아다녀요! 🎉';
+            updateUI();
+            gameState.isBusy = false;
+        }
+
+        // 처음부터 다시 키우기 초기화
+        function resetGame() {
+            gameState = {
+                stage: 'egg',
+                isBusy: false,
+                egg: { sun: 0, maxSun: 2, pet: 0, maxPet: 2 },
+                caterpillar: { eat: 0, maxEat: 3, dew: 0, maxDew: 3, sun: 0, maxSun: 2 },
+                pupa: { sun: 0, maxSun: 3, sing: 0, maxSing: 3 }
+            };
+
+            document.getElementById('egg-crack').classList.add('hidden');
+            document.getElementById('egg-container').classList.remove('hidden');
+            document.getElementById('caterpillar-svg').style.transform = 'scale(1, 1)';
+            document.getElementById('caterpillar-container').classList.add('hidden');
+            document.getElementById('pupa-container').classList.add('hidden');
+            document.getElementById('butterfly-container').classList.add('hidden');
+            document.getElementById('big-leaf').classList.remove('opacity-20');
+
+            document.getElementById('egg-controls').classList.remove('hidden');
+            document.getElementById('caterpillar-controls').classList.add('hidden');
+            document.getElementById('pupa-controls').classList.add('hidden');
+            document.getElementById('butterfly-controls').classList.add('hidden');
+
+            document.getElementById('status-message').innerText = '풀잎 위의 작은 알을 따뜻하게 돌봐주세요!';
+            updateUI();
+        }
+
+        // 앱 시작 시 초기 화면 세팅
+        window.onload = function() {
+            updateUI();
+        };
+    </script>
+</body>
+</html>
