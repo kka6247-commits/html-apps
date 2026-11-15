@@ -187,7 +187,77 @@
             border: none;
             background-color: #ffffff;
         }
+
+        /* QR 나눠주기 */
+        .header-btns {
+            display: flex;
+            gap: 6px;
+        }
+        .btn-qr {
+            background-color: #8e44ad;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #6c3483;
+        }
+        .btn-qr:active {
+            transform: scale(0.95);
+        }
+        .qr-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(22, 160, 133, 0.96);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            z-index: 100;
+            padding: 20px;
+            text-align: center;
+        }
+        .qr-overlay.show {
+            display: flex;
+        }
+        .qr-title {
+            color: white;
+            font-size: clamp(24px, 4vw, 44px);
+            font-weight: bold;
+            margin: 0;
+        }
+        .qr-box {
+            background: white;
+            padding: 20px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+        .qr-box img, .qr-box canvas {
+            display: block;
+            width: min(60vh, 80vw);
+            height: min(60vh, 80vw);
+        }
+        .qr-url {
+            color: #e8f8f5;
+            font-size: 15px;
+            word-break: break-all;
+            max-width: 90vw;
+        }
+        .qr-close {
+            background: white;
+            color: #16a085;
+            border: none;
+            border-radius: 14px;
+            padding: 12px 28px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -215,14 +285,52 @@
     <div class="right-panel">
         <div class="preview-header">
             <span>📱 내 마법 앱 화면</span>
-            <button class="btn-fullscreen" id="fullscreen-btn">🖥️ 화면 꽉 차게 보기 (새 창)</button>
+            <div class="header-btns">
+                <button class="btn-qr" id="qr-btn" title="이 앱 주소를 QR 코드로 크게 보여 줘요">📱 QR로 나눠주기</button>
+                <button class="btn-fullscreen" id="fullscreen-btn">🖥️ 화면 꽉 차게 보기 (새 창)</button>
+            </div>
         </div>
         <div class="iframe-container">
             <iframe id="preview-frame"></iframe>
         </div>
     </div>
 
+    <!-- QR 나눠주기 화면 -->
+    <div class="qr-overlay" id="qr-overlay" role="dialog" aria-modal="true" aria-labelledby="qr-title">
+        <h2 class="qr-title" id="qr-title">📷 카메라로 찍어서 들어오세요!</h2>
+        <div class="qr-box" id="qr-box"></div>
+        <div class="qr-url" id="qr-url"></div>
+        <button class="qr-close" id="qr-close">닫기 ✖</button>
+    </div>
+
     <script>
+        // 이 앱의 주소. 내 컴퓨터에서 파일로 열었을 때도 인터넷 주소가 나오게 한다.
+        const APP_URL = 'https://kka6247-commits.github.io/html-apps/app-runner.html';
+        const qrOverlay = document.getElementById('qr-overlay');
+        const qrBox = document.getElementById('qr-box');
+        let qrMade = false;
+
+        function showQr() {
+            const url = location.hostname.endsWith('github.io') ? location.href.split('#')[0] : APP_URL;
+            if (!qrMade) {
+                if (typeof QRCode === 'undefined') {
+                    alert('QR 코드를 만들지 못했어요. 인터넷 연결을 확인해 주세요.\n주소: ' + url);
+                    return;
+                }
+                new QRCode(qrBox, { text: url, width: 512, height: 512, correctLevel: QRCode.CorrectLevel.M });
+                document.getElementById('qr-url').textContent = url;
+                qrMade = true;
+            }
+            qrOverlay.classList.add('show');
+        }
+        function hideQr() {
+            qrOverlay.classList.remove('show');
+        }
+        document.getElementById('qr-btn').addEventListener('click', showQr);
+        document.getElementById('qr-close').addEventListener('click', hideQr);
+        qrOverlay.addEventListener('click', e => { if (e.target === qrOverlay) hideQr(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') hideQr(); });
+
         const codeInput = document.getElementById('code-input');
         const runBtn = document.getElementById('run-btn');
         const saveBtn = document.getElementById('save-btn');
