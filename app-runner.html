@@ -14,6 +14,7 @@
             padding: 0;
             display: flex;
             height: 100vh;
+            height: 100dvh; /* 태블릿 주소창을 뺀 실제 보이는 높이 */
             background-color: #e8f8f5;
             overflow: hidden;
         }
@@ -27,6 +28,9 @@
             flex-direction: column;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
             z-index: 10;
+            flex-shrink: 0;
+            overflow-y: auto; /* 화면이 낮아도 저장 칸까지 내려서 볼 수 있게 */
+            -webkit-overflow-scrolling: touch;
         }
         .header-row {
             display: flex;
@@ -255,6 +259,55 @@
             font-size: 18px;
             font-weight: bold;
             cursor: pointer;
+        }
+
+        /* ===== 태블릿·좁은 화면 대응 ===== */
+        .left-panel > * { flex-shrink: 0; }
+        .left-panel > textarea { flex-shrink: 1; }
+
+        /* 화면 높이가 낮을 때(가로로 든 태블릿 등): 여백·글씨를 줄여 한 화면에 */
+        @media (max-height: 760px) {
+            .left-panel { padding: 10px 14px; }
+            .header-row { padding-bottom: 6px; margin-bottom: 8px; }
+            .header-title { font-size: 19px; }
+            .step-box { padding: 6px 10px; margin-bottom: 8px; font-size: 13px; }
+            textarea { min-height: 60px; margin-bottom: 8px; }
+            .btn { padding: 10px; font-size: 16px; }
+            .btn-run { margin-bottom: 10px; }
+            .save-box { padding: 8px 10px; }
+            .save-label { margin-bottom: 4px; }
+            .name-input { padding: 6px 8px; margin-bottom: 6px; }
+            .btn-save { padding: 10px; font-size: 16px; }
+            .right-panel { padding: 10px 14px; }
+        }
+
+        /* 폭이 좁을 때(세로로 든 태블릿): 위아래로 쌓고 페이지 전체를 스크롤 */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                overflow: auto;
+            }
+            .left-panel {
+                width: 100%;
+                border-right: none;
+                border-bottom: 4px solid #1abc9c;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                overflow: visible;
+            }
+            textarea { flex: none; height: 140px; }
+            .save-box {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 8px;
+                align-items: center;
+            }
+            .save-label { grid-column: 1 / -1; margin-bottom: 0; }
+            .name-input { margin-bottom: 0; }
+            .btn-save { width: auto; white-space: nowrap; }
+            .right-panel { height: 75vh; height: 75dvh; min-height: 420px; }
+            .preview-header { flex-wrap: wrap; gap: 8px; }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
