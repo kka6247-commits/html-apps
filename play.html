@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪄 마법 앱 여는 중…</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e8f8f5;
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            color: #16a085;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        h1 { font-size: 26px; margin: 0 0 10px; }
+        p { color: #555; font-size: 16px; line-height: 1.6; margin: 0; }
+        a { color: #2e86c1; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="msg">
+        <h1>🪄 마법 앱 여는 중…</h1>
+        <p>잠깐만 기다려 주세요!</p>
+    </div>
+    <script>
+        /* 마법 앱 실행기의 '🔗 링크로 만들기'로 만든 링크를 여는 페이지.
+         * 앱 코드는 주소의 # 뒤에 담겨 있다. (# 뒤는 서버로 보내지지 않는다)
+         *   #z.<글자>  : 코드를 압축(deflate-raw)한 뒤 base64url 로 바꾼 것
+         *   #b.<글자>  : 압축 없이 base64url 로만 바꾼 것 (압축을 못 하는 브라우저용) */
+        const RUNNER = 'app-runner.html';
+
+        function showError(text) {
+            document.getElementById('msg').innerHTML =
+                '<h1>😢 앱을 열지 못했어요</h1><p>' + text +
+                '<br><br><a href="' + RUNNER + '">🪄 마법 앱 실행기로 가기</a></p>';
+        }
+
+        function fromBase64Url(s) {
+            s = s.replace(/-/g, '+').replace(/_/g, '/');
+            while (s.length % 4) s += '=';
+            const bin = atob(s);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            return bytes;
+        }
+
+        async function inflate(bytes) {
+            const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+            return new Uint8Array(await new Response(stream).arrayBuffer());
+        }
+
+        async function openApp() {
+            const hash = decodeURIComponent(location.hash.slice(1));
+            const dot = hash.indexOf('.');
+            if (!hash || dot < 0) {
+                showError('링크에 앱이 들어 있지 않아요.<br>링크를 끝까지 다 복사했는지 확인해 주세요.');
+                return;
+            }
+            const kind = hash.slice(0, dot);
+            const data = hash.slice(dot + 1);
+            let code;
+            try {
+                let bytes = fromBase64Url(data);
+                if (kind === 'z') {
+                    if (typeof DecompressionStream === 'undefined') {
+                        showError('이 인터넷 창은 너무 오래돼서 앱을 열 수 없어요.<br>크롬이나 삼성 인터넷을 최신으로 바꿔 주세요.');
+                        return;
+                    }
+                    bytes = await inflate(bytes);
+                } else if (kind !== 'b') {
+                    throw new Error('모르는 링크 형식');
+                }
+                code = new TextDecoder().decode(bytes);
+            } catch (e) {
+                showError('링크가 중간에 잘린 것 같아요.<br>링크를 처음부터 끝까지 다시 복사해 주세요.');
+                return;
+            }
+            document.open();
+            document.write(code);
+            document.close();
+        }
+
+        openApp();
+    </script>
+</body>
+</html>

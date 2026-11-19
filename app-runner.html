@@ -145,6 +145,101 @@
         .btn-save:hover {
             background-color: #4aa3df;
         }
+        .save-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .save-btns .btn {
+            padding: 12px 6px;
+            font-size: 15px;
+            white-space: nowrap;
+        }
+        .btn-link {
+            background-color: #f39c12;
+            box-shadow: 0 5px 0 #c87f0a;
+        }
+        .btn-link:hover {
+            background-color: #f5ab35;
+        }
+
+        /* 링크로 만들기 창 */
+        .link-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 16px;
+        }
+        .link-overlay.show { display: flex; }
+        .link-card {
+            background: white;
+            border-radius: 20px;
+            border: 4px solid #f39c12;
+            padding: 20px;
+            width: min(560px, 100%);
+            max-height: 100%;
+            overflow-y: auto;
+            text-align: center;
+        }
+        .link-title {
+            color: #d68910;
+            font-size: 22px;
+            margin: 0 0 8px;
+        }
+        .link-hint {
+            font-size: 15px;
+            color: #444;
+            line-height: 1.5;
+            margin: 0 0 12px;
+        }
+        .link-text {
+            flex: none;
+            height: 90px;
+            font-size: 12px;
+            color: #555;
+            word-break: break-all;
+            margin-bottom: 6px;
+        }
+        .link-warn {
+            font-size: 13px;
+            color: #c0392b;
+            margin: 0 0 10px;
+            min-height: 1em;
+        }
+        .link-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .link-actions .btn {
+            padding: 12px 6px;
+            font-size: 16px;
+            text-decoration: none;
+            display: block;
+        }
+        .btn-copy {
+            background-color: #f39c12;
+            box-shadow: 0 5px 0 #c87f0a;
+        }
+        .btn-try {
+            background-color: #27ae60;
+            box-shadow: 0 5px 0 #1e8449;
+        }
+        .link-close {
+            background: #ecf0f1;
+            color: #7f8c8d;
+            border: 1px solid #bdc3c7;
+            border-radius: 12px;
+            padding: 10px 24px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
         
         /* 오른쪽 실행 화면 (미리보기 영역) */
         .right-panel {
@@ -304,15 +399,6 @@
                 padding-bottom: 16px;
             }
             textarea { flex: none; height: 140px; }
-            .save-box {
-                display: grid;
-                grid-template-columns: 1fr auto;
-                gap: 8px;
-                align-items: center;
-            }
-            .save-label { grid-column: 1 / -1; margin-bottom: 0; }
-            .name-input { margin-bottom: 0; }
-            .btn-save { width: auto; white-space: nowrap; }
             .right-panel { height: 75vh; height: 75dvh; min-height: 420px; }
             .preview-header { flex-wrap: wrap; gap: 8px; }
         }
@@ -336,9 +422,12 @@
         <button class="btn btn-run" id="run-btn">2️⃣ 내 앱 실행하기! 🚀</button>
         
         <div class="save-box">
-            <label class="save-label" for="app-name">3️⃣ 내 태블릿에 저장하기</label>
+            <label class="save-label" for="app-name">3️⃣ 저장하거나 링크로 나누기</label>
             <input type="text" id="app-name" class="name-input" placeholder="앱 이름 입력 (예: 강아지키우기)">
-            <button class="btn btn-save" id="save-btn">내 태블릿에 저장 💾</button>
+            <div class="save-btns">
+                <button class="btn btn-save" id="save-btn">내 태블릿에 저장 💾</button>
+                <button class="btn btn-link" id="link-btn">🔗 링크로 만들기</button>
+            </div>
         </div>
     </div>
 
@@ -361,6 +450,21 @@
         <div class="qr-box" id="qr-box"></div>
         <div class="qr-url" id="qr-url"></div>
         <button class="qr-close" id="qr-close">닫기 ✖</button>
+    </div>
+
+    <!-- 링크로 만들기 화면 -->
+    <div class="link-overlay" id="link-overlay" role="dialog" aria-modal="true" aria-labelledby="link-title">
+        <div class="link-card">
+            <h2 class="link-title" id="link-title">🔗 내 앱 링크가 생겼어요!</h2>
+            <p class="link-hint">이 링크를 누르면 누구나 내 앱을 바로 열 수 있어요.<br>복사해서 <b>뽐내기</b>나 <b>자료실</b>의 링크 칸에 붙여 넣으세요!</p>
+            <textarea class="link-text" id="link-text" readonly></textarea>
+            <p class="link-warn" id="link-warn"></p>
+            <div class="link-actions">
+                <button class="btn btn-copy" id="link-copy">📋 링크 복사하기</button>
+                <a class="btn btn-try" id="link-open" target="_blank" rel="noopener">👀 열어 보기</a>
+            </div>
+            <button class="link-close" id="link-close">닫기 ✖</button>
+        </div>
     </div>
 
     <script>
@@ -453,6 +557,76 @@
             const url = URL.createObjectURL(blob);
             window.open(url, "_blank");
         }
+
+        // ===== 🔗 링크로 만들기 =====
+        // 코드를 압축해서 play.html 주소의 # 뒤에 담는다. 링크만 있으면 서버 없이 앱이 열린다.
+        const PLAY_URL = location.hostname.endsWith('github.io')
+            ? location.origin + location.pathname.replace(/[^\/]*$/, '') + 'play.html'
+            : 'https://kka6247-commits.github.io/html-apps/play.html';
+        const SHEET_CELL_MAX = 50000; // 구글 시트 칸 하나에 들어가는 글자 수
+        const linkOverlay = document.getElementById('link-overlay');
+        const linkText = document.getElementById('link-text');
+
+        function toBase64Url(bytes) {
+            let bin = '';
+            for (let i = 0; i < bytes.length; i += 0x8000) {
+                bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+            }
+            return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        async function deflate(bytes) {
+            const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+            return new Uint8Array(await new Response(stream).arrayBuffer());
+        }
+
+        async function makeLink() {
+            const code = codeInput.value.trim();
+            if (!code) {
+                alert("링크로 만들 코드가 없어요! 먼저 코드를 붙여넣어 주세요. 😊");
+                return;
+            }
+            let bytes = new TextEncoder().encode(code);
+            let kind = 'b';
+            if (typeof CompressionStream !== 'undefined') {
+                try {
+                    bytes = await deflate(bytes);
+                    kind = 'z';
+                } catch (e) { /* 압축이 안 되면 그냥 담는다 */ }
+            }
+            const link = PLAY_URL + '#' + kind + '.' + toBase64Url(bytes);
+
+            linkText.value = link;
+            document.getElementById('link-open').href = link;
+            document.getElementById('link-warn').textContent = link.length > SHEET_CELL_MAX
+                ? '⚠️ 앱이 커서 링크가 아주 길어요(' + link.length.toLocaleString() + '자). 뽐내기·자료실에는 안 들어갈 수 있어요. 그럴 땐 [내 태블릿에 저장]을 써 주세요.'
+                : '';
+            linkOverlay.classList.add('show');
+        }
+
+        async function copyLink() {
+            const btn = document.getElementById('link-copy');
+            let ok = false;
+            try {
+                await navigator.clipboard.writeText(linkText.value);
+                ok = true;
+            } catch (e) {
+                linkText.focus();
+                linkText.select();
+                try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+            }
+            btn.textContent = ok ? '✅ 복사됐어요!' : '링크 칸을 꾹 눌러 복사해 주세요';
+            setTimeout(() => { btn.textContent = '📋 링크 복사하기'; }, 2500);
+        }
+
+        function hideLink() {
+            linkOverlay.classList.remove('show');
+        }
+        document.getElementById('link-btn').addEventListener('click', makeLink);
+        document.getElementById('link-copy').addEventListener('click', copyLink);
+        document.getElementById('link-close').addEventListener('click', hideLink);
+        linkOverlay.addEventListener('click', e => { if (e.target === linkOverlay) hideLink(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') hideLink(); });
 
         runBtn.addEventListener('click', runCode);
         saveBtn.addEventListener('click', saveApp);
